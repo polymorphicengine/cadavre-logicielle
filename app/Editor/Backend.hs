@@ -25,38 +25,40 @@ import Editor.UI
 import Foreign.JavaScript (JSObject)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core as C hiding (text)
+import qualified Network.Socket as N
+import Sound.Osc.Fd as O
 
--- data EvalMode
---   = EvalBlock
---   | EvalLine
---   | EvalWhole
---   deriving (Eq, Show)
+-- a player has a name and is identified through their name
+data Player = Player {pName :: String, pAddress :: N.SockAddr}
 
--- evalContentAtCursor :: EvalMode -> JSObject -> MVar Environment -> UI ()
--- evalContentAtCursor mode cm envMV = do
---                 line <- getCursorLine cm
---                 evalContentAtLine mode cm line envMV
+instance Eq Player where
+  (==) p1 p2 = pName p1 == pName p2
 
--- evalContentAtLine :: EvalMode -> JSObject -> Int -> MVar Environment -> UI ()
--- evalContentAtLine mode cm line envMV = do
---                 editorContent <- getValue cm
---                 editorNum <- getEditorNumber cm
---                 out <- getOutputEl
---                 env <- liftIO $ takeMVar envMV
---                 let ci = case mode of
---                             EvalBlock -> compilerInterpreterBlock line editorNum (pack editorContent)
---                             EvalLine -> compilerInterpreterLine line editorNum (pack editorContent)
---                             EvalWhole -> compilerInterpreterWhole editorNum (pack editorContent)
---                 res <- liftIO $ runCI env ci
---                 case res of
---                       Left (CIError err (Just (CurrentBlock st end))) -> do
---                                           flashError cm st end
---                                           void $ element out # set UI.text err  --TODO: get block start and end for flashing error
---                                           liftIO $ putMVar envMV env
---                       Left (CIError err Nothing) -> do
---                                           void $ element out # set UI.text err  --TODO: get block start and end for flashing error
---                                           liftIO $ putMVar envMV env
---                       Right (resp, newEnv, st, end) -> do
---                                           flashSuccess cm st end
---                                           _ <- element out # set UI.text resp
---                                           liftIO $ putMVar envMV newEnv
+instance Show Player where
+  show = pName
+
+type Players = [Player]
+
+recvMessageFrom :: Udp -> IO (Maybe Message, N.SockAddr)
+recvMessageFrom u = fmap (\(p, n) -> (packet_to_message p, n)) (recvFrom u)
+
+-- | Start Haskell interpreter, with input and output mutable variables to
+-- communicate with it
+serve :: IO ()
+serve = do
+  putStrLn "starting server"
+  local <- udpServer "127.0.0.1" 2323
+
+  loop local
+  where
+    loop l =
+      do
+        m <- recvMessageFrom l
+        act l m
+        loop l
+
+act :: Udp -> (Maybe O.Message, N.SockAddr) -> IO ()
+-- test if the listener is responsive
+act l (Just (Message "/ping" []), remote) = print remote >> O.sendTo l (O.p_message "/pong" []) remote
+act _ (Nothing, _) = putStrLn "Not a message?"
+act _ (Just m, _) = putStrLn $ "Unhandled message: " ++ show m

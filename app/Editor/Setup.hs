@@ -35,12 +35,13 @@ setup :: Window -> UI ()
 setup win = void $ do
   frontend win
 
-  str <- setupStream
-  -- (mMV, rMV) <- setupHint mode
+  liftIO serve
 
-  -- envMV <- setupBackend str hyd mode mMV rMV
-  -- loadBootDefs envMV
-  return ()
+-- str <- setupStream
+-- (mMV, rMV) <- setupHint mode
+
+-- envMV <- setupBackend str hyd mode mMV rMV
+-- loadBootDefs envMV
 
 setupStream :: UI Stream
 setupStream = do

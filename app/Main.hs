@@ -18,6 +18,7 @@ module Main where
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
+import Editor.Backend
 import Editor.CommandLine
 import Editor.Setup
 import Graphics.UI.Threepenny.Core as C hiding (text)
