@@ -18,12 +18,8 @@ module Editor.Backend where
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-import Control.Concurrent.MVar (MVar, putMVar, takeMVar)
-import Control.Monad (void)
-import Data.Text (pack)
+import Data.IORef
 import Editor.UI
-import Foreign.JavaScript (JSObject)
-import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core as C hiding (text)
 import qualified Network.Socket as N
 import Sound.Osc.Fd as O
@@ -39,26 +35,39 @@ instance Show Player where
 
 type Players = [Player]
 
+-- state that the playing table contains and acts on
+data State
+  = State
+  { sLocal :: Udp,
+    sPlayers :: Players,
+    sMessageRef :: IORef [Element]
+  }
+
+addPlayer :: Player -> State -> State
+addPlayer p st = st {sPlayers = p : sPlayers st}
+
 recvMessageFrom :: Udp -> IO (Maybe Message, N.SockAddr)
 recvMessageFrom u = fmap (\(p, n) -> (packet_to_message p, n)) (recvFrom u)
 
--- | Start Haskell interpreter, with input and output mutable variables to
--- communicate with it
-serve :: IO ()
-serve = do
-  putStrLn "starting server"
-  local <- udpServer "127.0.0.1" 2323
+playingTable :: State -> UI ()
+playingTable st = do
+  m <- liftIO $ recvMessageFrom (sLocal st)
+  newSt <- act st m
+  playingTable newSt
 
-  loop local
-  where
-    loop l =
-      do
-        m <- recvMessageFrom l
-        act l m
-        loop l
+act :: State -> (Maybe O.Message, N.SockAddr) -> UI State
+act st (Just (Message "/ping" []), remote) = do
+  addMessage "pinged" (sMessageRef st)
+  liftIO $ O.sendTo (sLocal st) (O.p_message "/pong" []) remote
+  return st
+act st (Just (Message "/sit" [AsciiString x]), remote) = do
+  -- TODO: what if player with this name already exists? prevent from connecting multiple times
+  addMessage (ascii_to_string x ++ " joined the table!") (sMessageRef st)
+  liftIO $ O.sendTo (sLocal st) (O.p_message "/ok" []) remote
+  return $ addPlayer (Player (ascii_to_string x) remote) st
+act st (Just m, _) = liftIO (putStrLn $ "Unhandled message: " ++ show m) >> return st
+act st _ = return st
 
-act :: Udp -> (Maybe O.Message, N.SockAddr) -> IO ()
--- test if the listener is responsive
-act l (Just (Message "/ping" []), remote) = print remote >> O.sendTo l (O.p_message "/pong" []) remote
-act _ (Nothing, _) = putStrLn "Not a message?"
-act _ (Just m, _) = putStrLn $ "Unhandled message: " ++ show m
+-- broadcast to all connected players
+broadcast :: State -> O.Packet -> IO ()
+broadcast st m = mapM_ (O.sendTo (sLocal st) m . pAddress) (sPlayers st)

@@ -28,6 +28,7 @@ import Control.Monad (void)
 import Data.IORef (IORef, modifyIORef, readIORef)
 import Data.Map as Map (empty)
 import Data.Text (Text, pack, unpack)
+import Data.Time
 import Foreign.JavaScript (JSObject)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core as C hiding (get, text, value)
@@ -111,3 +112,31 @@ getBootPaths = do
 
 wrapCatchErr :: String -> String
 wrapCatchErr st = "try {" ++ st ++ "} catch (err) {}"
+
+addElement :: String -> Element -> IORef [Element] -> UI ()
+addElement cid ele ref = do
+  liftIO $ modifyIORef ref (ele :)
+  redoLayout cid ref
+
+removeElement :: String -> IORef [Element] -> UI ()
+removeElement cid ref = do
+  liftIO $ modifyIORef ref (\xs -> take (length xs - 1) xs)
+  redoLayout cid ref
+
+redoLayout :: String -> IORef [Element] -> UI ()
+redoLayout cid ref = do
+  win <- askWindow
+  els <- liftIO $ readIORef ref
+  mayContainer <- getElementById win cid
+  case mayContainer of
+    Nothing -> return ()
+    Just container -> void $ element container # set UI.children els
+
+mkMessage :: String -> String -> UI Element
+mkMessage t m = UI.div #+ [UI.span #. "message-time" # set UI.text t, UI.p #. "message" # set UI.text m] #. "message-container"
+
+addMessage :: String -> IORef [Element] -> UI ()
+addMessage m ref = do
+  t <- liftIO getZonedTime
+  el <- mkMessage (show t) m
+  addElement "message-container" el ref

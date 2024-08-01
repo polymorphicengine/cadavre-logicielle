@@ -11,6 +11,24 @@ pre::-webkit-scrollbar {
     display: none;
 }
 
+.message-container {
+    border: 2px solid #dedede;
+    border-radius: 2px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.message {
+    color: white;
+    font-family: monospace;
+}
+
+.message-time {
+    float: left;
+    color: white;
+    font-family: monospace;
+}
+
 body {
     background: #000;
     margin: 0px;

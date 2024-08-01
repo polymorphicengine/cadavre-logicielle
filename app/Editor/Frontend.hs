@@ -34,7 +34,12 @@ frontend win = do
 
   body <- UI.getBody win # set UI.style [("background-color", "black")]
 
-  void $ element body #+ [UI.div #+ [messageContainer "10:00" "😂", messageContainer "10:01" "lol"]]
+  void $ element body #+ [messageContainer]
 
-messageContainer :: String -> String -> UI Element
-messageContainer time message = UI.div #+ [UI.span #. "message-time" # set UI.text time, UI.p #. "message" # set UI.text message] #. "message-container"
+messageContainer :: UI Element
+messageContainer = UI.div #. "message-container" #@ "message-container"
+
+infixl 8 #@
+
+(#@) :: UI Element -> String -> UI Element
+(#@) mx s = mx # set (attr "id") s

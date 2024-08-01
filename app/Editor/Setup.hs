@@ -20,22 +20,25 @@ module Editor.Setup (setup) where
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-import Control.Concurrent (forkIO)
-import Control.Concurrent.MVar (MVar, newEmptyMVar, newMVar, putMVar, takeMVar)
 import Control.Monad (void)
 import Data.IORef (newIORef)
 import Editor.Backend
 import Editor.Frontend
 import Editor.UI
 import Graphics.UI.Threepenny.Core as C hiding (defaultConfig, text)
-import qualified Graphics.UI.Threepenny.Core as C
-import Sound.Tidal.Context hiding (mute, s, solo, (#))
+import Sound.Osc.Fd as O
+import Sound.Tidal.Stream
 
 setup :: Window -> UI ()
 setup win = void $ do
   frontend win
 
-  liftIO serve
+  udp <- liftIO $ udpServer "127.0.0.1" 2323
+  messageRef <- liftIO $ newIORef []
+
+  let state = State udp [] messageRef
+
+  playingTable state
 
 -- str <- setupStream
 -- (mMV, rMV) <- setupHint mode
