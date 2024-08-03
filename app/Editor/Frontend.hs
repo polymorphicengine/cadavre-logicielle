@@ -19,10 +19,9 @@ module Editor.Frontend where
 -}
 
 import Control.Monad (void)
+import Editor.UI
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core as C hiding (text)
-import System.Environment (getExecutablePath)
-import System.FilePath (dropFileName)
 
 frontend :: Window -> UI ()
 frontend win = do
@@ -34,12 +33,10 @@ frontend win = do
 
   body <- UI.getBody win # set UI.style [("background-color", "black")]
 
-  void $ element body #+ [messageContainer]
+  void $ element body #+ [playerContainer, messageContainer]
 
 messageContainer :: UI Element
 messageContainer = UI.div #. "message-container" #@ "message-container"
 
-infixl 8 #@
-
-(#@) :: UI Element -> String -> UI Element
-(#@) mx s = mx # set (attr "id") s
+playerContainer :: UI Element
+playerContainer = UI.div #. "player-container" #@ "player-container"

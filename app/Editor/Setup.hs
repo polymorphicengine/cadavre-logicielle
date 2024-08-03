@@ -21,7 +21,6 @@ module Editor.Setup (setup) where
 -}
 
 import Control.Monad (void)
-import Data.IORef (newIORef)
 import Editor.Backend
 import Editor.Frontend
 import Editor.UI
@@ -34,17 +33,14 @@ setup win = void $ do
   frontend win
 
   udp <- liftIO $ udpServer "127.0.0.1" 2323
-  messageRef <- liftIO $ newIORef []
 
-  let state = State udp [] messageRef
-
+  let state = State udp [] []
   playingTable state
 
 -- str <- setupStream
--- (mMV, rMV) <- setupHint mode
+-- hint <- setupHint
 
--- envMV <- setupBackend str hyd mode mMV rMV
--- loadBootDefs envMV
+-- state <- setupBackend str hint
 
 setupStream :: UI Stream
 setupStream = do
@@ -52,34 +48,9 @@ setupStream = do
   conf <- configureStream
   liftIO $ startTidal target conf
 
--- setupHint :: HintMode -> UI (MVar InterpreterMessage, MVar InterpreterResponse)
--- setupHint mode = do
+-- setupHint :: UI (MVar InterpreterMessage, MVar InterpreterResponse)
+-- setupHint = do
 --   mMV <- liftIO newEmptyMVar
 --   rMV <- liftIO newEmptyMVar
 --   void $ liftIO $ forkIO $ hintJob mode mMV rMV
 --   return (mMV, rMV)
-
--- setupBackend :: Stream -> MVar (Pattern Text) -> HintMode -> MVar InterpreterMessage -> MVar InterpreterResponse -> UI (MVar Environment)
--- setupBackend str hyd mode mMV rMV = do
---   win <- askWindow
---   let env = Environment str (Just $ hyd) defaultTypeEnv (HintEnv mode mMV rMV) (Just $ ConfigEnv (setConfig win) (clearConfig win)) Nothing
-
---   envMV <- liftIO $ newMVar env
-
---   return envMV
-
--- loadBootDefs :: MVar Environment -> UI ()
--- loadBootDefs envMV = do
---   env <- liftIO $ takeMVar envMV
---   mps <- getBootPaths
---   case mps of
---     Just ps -> do
---       x <- liftIO $ runCI env $ compilerInterpreterBoot ps
---       case x of
---         Left (CIError err _) -> do
---           _ <- (getOutputEl # set C.text err)
---           liftIO $ putMVar envMV env
---         Right env' -> do
---           _ <- (getOutputEl # set C.text "successfully loaded boot file(s)!")
---           liftIO $ putMVar envMV env'
---     Nothing -> liftIO $ putMVar envMV env
