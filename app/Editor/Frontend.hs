@@ -33,10 +33,13 @@ frontend win = do
 
   body <- UI.getBody win # set UI.style [("background-color", "black")]
 
-  void $ element body #+ [playerContainer, messageContainer]
+  void $ element body #+ [playerContainer, messageContainer, definitionContainer]
 
 messageContainer :: UI Element
 messageContainer = UI.div #. "message-container" #@ "message-container"
 
 playerContainer :: UI Element
 playerContainer = UI.div #. "player-container" #@ "player-container"
+
+definitionContainer :: UI Element
+definitionContainer = UI.div #. "definition-container" #@ "definition-container"

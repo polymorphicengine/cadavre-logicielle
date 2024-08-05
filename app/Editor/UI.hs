@@ -79,7 +79,7 @@ getBootPaths = do
       else
         ( do
             bb <- liftIO $ doesFileExist p
-            (if bb then return $ Just [pack p] else (addMessage (show p)) >> return Nothing)
+            (if bb then return $ Just [pack p] else addMessage (show p) >> return Nothing)
         )
     )
 
@@ -87,7 +87,7 @@ wrapCatchErr :: String -> String
 wrapCatchErr st = "try {" ++ st ++ "} catch (err) {}"
 
 mkMessage :: String -> String -> UI Element
-mkMessage t m = UI.div #+ [UI.span # set UI.text t, UI.p # set UI.text m] #. "message"
+mkMessage t m = UI.div #+ [UI.span # set UI.text t, UI.pre # set UI.text m] #. "message"
 
 addElement :: String -> String -> Element -> UI ()
 addElement className containerId el = do

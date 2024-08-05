@@ -20,9 +20,12 @@ module Editor.Setup (setup) where
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
+import Control.Concurrent (forkIO)
+import Control.Concurrent.MVar (MVar, newEmptyMVar)
 import Control.Monad (void)
 import Editor.Backend
 import Editor.Frontend
+import Editor.Hint
 import Editor.UI
 import Graphics.UI.Threepenny.Core as C hiding (defaultConfig, text)
 import Sound.Osc.Fd as O
@@ -31,16 +34,14 @@ import Sound.Tidal.Stream
 setup :: Window -> UI ()
 setup win = void $ do
   frontend win
+  str <- setupStream
+  (mMV, rMV) <- setupHint str
 
+  -- listening address
   udp <- liftIO $ udpServer "127.0.0.1" 2323
 
-  let state = State udp [] []
-  playingTable state
-
--- str <- setupStream
--- hint <- setupHint
-
--- state <- setupBackend str hint
+  let state = State udp [] [] mMV rMV str
+  liftIO $ forkIO $ runUI win (playingTable state)
 
 setupStream :: UI Stream
 setupStream = do
@@ -48,9 +49,9 @@ setupStream = do
   conf <- configureStream
   liftIO $ startTidal target conf
 
--- setupHint :: UI (MVar InterpreterMessage, MVar InterpreterResponse)
--- setupHint = do
---   mMV <- liftIO newEmptyMVar
---   rMV <- liftIO newEmptyMVar
---   void $ liftIO $ forkIO $ hintJob mode mMV rMV
---   return (mMV, rMV)
+setupHint :: Stream -> UI (MVar InterpreterMessage, MVar InterpreterResponse)
+setupHint stream = do
+  mMV <- liftIO newEmptyMVar
+  rMV <- liftIO newEmptyMVar
+  void $ liftIO $ forkIO $ hintJob stream mMV rMV
+  return (mMV, rMV)
