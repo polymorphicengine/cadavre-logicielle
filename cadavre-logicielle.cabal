@@ -23,6 +23,7 @@ executable cl-server
                       Editor.Setup
                       Editor.UI
                       Editor.CommandLine
+                      Editor.Hint
     build-depends:    base,
                       text,
                       containers,
@@ -36,7 +37,8 @@ executable cl-server
                       optparse-applicative,
                       network,
                       hosc,
-                      time
+                      time,
+                      hint
     hs-source-dirs:   app
     default-language: Haskell2010
     ghc-options: -threaded
