@@ -24,6 +24,9 @@ _defineInt = _cX' 0 _valToInt
 _defineNote :: String -> Pattern Note
 _defineNote = _cX' 0 _valToNote
 
+_defineTime :: String -> Pattern Time
+_defineTime = _cX' 0 _valToTime
+
 _defineBool :: String -> Pattern Bool
 _defineBool = _cX' False _valToBool
 
@@ -45,6 +48,10 @@ _valToNote :: Value -> Maybe Note
 _valToNote (VN x) = Just x
 _valToNote _ = Nothing
 
+_valToTime :: Value -> Maybe Time
+_valToTime (VR x) = Just x
+_valToTime _ = Nothing
+
 _valToString :: Value -> Maybe String
 _valToString (VS x) = Just x
 _valToString _ = Nothing
@@ -61,3 +68,24 @@ _valToVM (VList xs) = Just (Map.fromList $ concatMap toTuples xs)
       Nothing -> []
     toTuples _ = []
 _valToVM _ = Nothing
+
+streamSetDouble :: Stream -> String -> Pattern Double -> IO ()
+streamSetDouble = streamSet
+
+streamSetInt :: Stream -> String -> Pattern Int -> IO ()
+streamSetInt = streamSet
+
+streamSetBool :: Stream -> String -> Pattern Bool -> IO ()
+streamSetBool = streamSet
+
+streamSetNote :: Stream -> String -> Pattern Note -> IO ()
+streamSetNote = streamSet
+
+streamSetVM :: Stream -> String -> Pattern ValueMap -> IO ()
+streamSetVM = streamSet
+
+streamSetString :: Stream -> String -> Pattern String -> IO ()
+streamSetString = streamSet
+
+streamSetTime :: Stream -> String -> Pattern Time -> IO ()
+streamSetTime = streamSet
