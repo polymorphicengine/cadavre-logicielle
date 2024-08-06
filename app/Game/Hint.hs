@@ -41,11 +41,10 @@ hintJob str mMV rMV = do
 -- this is the basic interpreter that will be only loaded once
 staticInterpreter :: Stream -> Interpreter ()
 staticInterpreter str = do
+  Hint.loadModules ["app/TidalExtension.hs"]
   Hint.set [languageExtensions := extensions]
-  Hint.setImportsF [ModuleImport x NotQualified NoImportList | x <- ["Sound.Tidal.Context", "Data.IORef", "Prelude"]]
+  Hint.setImportsF [ModuleImport x NotQualified NoImportList | x <- ["Sound.Tidal.Context", "Data.IORef", "Prelude", "TidalExtension"]]
   bind "tidal" str
-  -- Hint.runStmt bootTidal
-  return ()
 
 -- this is the intrepreter receiving and interpreteing messages and sending the results back
 interpreterLoop :: MVar InterpreterMessage -> MVar InterpreterResponse -> Interpreter ()

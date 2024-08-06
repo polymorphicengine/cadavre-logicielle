@@ -24,8 +24,11 @@ executable cl-server
                       Game.UI
                       Game.CommandLine
                       Game.Hint
+                      Game.Game
+                      TidalExtension
     build-depends:    base,
                       text,
+                      mtl,
                       containers,
                       tidal == 1.9.5,
                       tidal-link,

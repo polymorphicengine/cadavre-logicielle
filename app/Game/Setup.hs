@@ -25,6 +25,7 @@ import Control.Concurrent.MVar (MVar, newEmptyMVar)
 import Control.Monad (void)
 import Game.Backend
 import Game.Frontend
+import Game.Game
 import Game.Hint
 import Game.UI
 import Graphics.UI.Threepenny.Core as C hiding (defaultConfig, text)
@@ -41,7 +42,7 @@ setup win = void $ do
   udp <- liftIO $ udpServer "127.0.0.1" 2323
 
   let state = State udp [] [] mMV rMV str
-  liftIO $ forkIO $ runUI win (playingTable state)
+  liftIO $ forkIO $ runUI win $ void $ runGame state playingTable
 
 setupStream :: UI Stream
 setupStream = do
