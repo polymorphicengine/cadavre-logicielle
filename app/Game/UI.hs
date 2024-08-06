@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
-module Editor.UI where
+module Game.UI where
 
 {-
     UI.hs - miscellanious functions for the user interface

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Editor.Setup (setup) where
+module Game.Setup (setup) where
 
 {-
     Setup.hs - setup of the various components of the backend
@@ -23,10 +23,10 @@ module Editor.Setup (setup) where
 import Control.Concurrent (forkIO)
 import Control.Concurrent.MVar (MVar, newEmptyMVar)
 import Control.Monad (void)
-import Editor.Backend
-import Editor.Frontend
-import Editor.Hint
-import Editor.UI
+import Game.Backend
+import Game.Frontend
+import Game.Hint
+import Game.UI
 import Graphics.UI.Threepenny.Core as C hiding (defaultConfig, text)
 import Sound.Osc.Fd as O
 import Sound.Tidal.Stream

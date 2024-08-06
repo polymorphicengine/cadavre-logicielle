@@ -1,4 +1,4 @@
-module Editor.Frontend where
+module Game.Frontend where
 
 {-
     Frontend.hs - defines the html dom for the editor interface
@@ -19,7 +19,7 @@ module Editor.Frontend where
 -}
 
 import Control.Monad (void)
-import Editor.UI
+import Game.UI
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core as C hiding (text)
 

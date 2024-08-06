@@ -1,4 +1,4 @@
-module Editor.Hint where
+module Game.Hint where
 
 import Control.Concurrent.MVar (MVar, putMVar, takeMVar)
 import Control.Exception (SomeException, displayException)

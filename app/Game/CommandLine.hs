@@ -1,4 +1,4 @@
-module Editor.CommandLine where
+module Game.CommandLine where
 
 {-
     CommandLine.hs - command line interface for the editor

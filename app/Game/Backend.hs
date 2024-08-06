@@ -1,4 +1,4 @@
-module Editor.Backend where
+module Game.Backend where
 
 {-
     Backend.hs - Implements the interaction between the compiler-interpreter and the editor
@@ -21,8 +21,8 @@ module Editor.Backend where
 import Control.Concurrent.MVar
 import Data.Bifunctor
 import Data.Maybe (fromMaybe)
-import Editor.Hint
-import Editor.UI
+import Game.Hint
+import Game.UI
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core as C hiding (text)
 import qualified Network.Socket as N
@@ -132,7 +132,7 @@ playingTable st = do
 
 act :: State -> (Maybe O.Message, N.SockAddr) -> UI State
 act st (Just (Message "/ping" []), remote) = do
-  liftIO $ O.sendTo (sLocal st) (O.p_message "/pong" []) remote
+  liftIO $ O.sendTo (sLocal st) (O.p_message "/ok" []) remote
   addMessage (getNameFromAddress (sPlayers st) remote ++ " pinged the table!")
   return st
 act st (Just (Message "/say" [AsciiString x]), remote) = do
@@ -154,10 +154,10 @@ act st (Just (Message "/eval" [AsciiString statement]), remote) = do
       liftIO $ O.sendTo (sLocal st) (O.p_message "/eval/value" [O.string x]) remote
       addMessage (getNameFromAddress (sPlayers st) remote ++ " evaluated a statement with value " ++ x)
     RStat Nothing -> do
-      liftIO $ O.sendTo (sLocal st) (O.p_message "/eval/ok" []) remote
+      liftIO $ O.sendTo (sLocal st) (O.p_message "/ok" []) remote
       addMessage (getNameFromAddress (sPlayers st) remote ++ " evaluated a statement!")
     RError e -> do
-      liftIO $ O.sendTo (sLocal st) (O.p_message "/eval/error" [O.string e]) remote
+      liftIO $ O.sendTo (sLocal st) (O.p_message "/error" [O.string e]) remote
       addMessage (getNameFromAddress (sPlayers st) remote ++ " made an error: \n" ++ e)
     _ -> return ()
   return st

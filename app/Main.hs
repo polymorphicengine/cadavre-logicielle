@@ -18,9 +18,8 @@ module Main where
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-import Editor.Backend
-import Editor.CommandLine
-import Editor.Setup
+import Game.CommandLine
+import Game.Setup
 import Graphics.UI.Threepenny.Core as C hiding (text)
 import Options.Applicative (execParser)
 import System.Environment (getExecutablePath)
