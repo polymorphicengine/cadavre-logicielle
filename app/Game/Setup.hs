@@ -39,7 +39,7 @@ setup win = void $ do
   (mMV, rMV) <- setupHint str
 
   -- listening address
-  udp <- liftIO $ udpServer "127.0.0.1" 2323
+  udp <- liftIO $ udp_server 2323
 
   let state = State udp [] [] mMV rMV str
   liftIO $ forkIO $ runUI win $ void $ runGame state playingTable
