@@ -1,4 +1,4 @@
-# Cadavre Logicielle
+# Cadavre Logicielle (server)
 
 Cadavre Logicielle is a system for collaborative, distributed live coding in a local network. It is inspired by the surrealist parlour game *cadavre exquis* and is an adaptation of that game to the medium of code. In *cadavre exquis*, or Exquisite Corpse, players take turns to write a sentence on a piece of paper and hide part of the sentence by folding the paper before passing it on to the next player. After a couple of rounds the story is unfolded and read out loud.
 
