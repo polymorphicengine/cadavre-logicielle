@@ -2,6 +2,8 @@
 
 Cadavre Logicielle is a system for collaborative, distributed live coding in a local network. It is inspired by the surrealist parlour game *cadavre exquis* and is an adaptation of that game to the medium of code. In *cadavre exquis*, or Exquisite Corpse, players take turns to write a sentence on a piece of paper and hide part of the sentence by folding the paper before passing it on to the next player. After a couple of rounds the story is unfolded and read out loud.
 
+There is a server and client application. The client application can be found [here](https://github.com/polymorphicengine/cadavre-logicielle-player).
+
 In Cadavre Logicielle every player edits their own document but the state of the interpreter is shared. When players define an expression, the name and type of the expression is shared with all players and displayed in a small window next to their editors. Other players can then use these expressions via their name in their own code, without knowing them explicitly. Since the underlying programming language is strongly typed, knowing the type of an expression is enough for players to write interpretable code.
 
 -----------------------------------
