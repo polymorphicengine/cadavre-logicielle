@@ -13,7 +13,7 @@ instance Valuable ValueMap where
   toValue vm = VList $ map toValue (Map.toList vm)
 
 _cX' :: a -> (Value -> Maybe a) -> String -> Pattern a
-_cX' d f st = Pattern $ \x@(State _ m) -> query (maybe (pure d) (_getP_ f . valueToPattern) $ Map.lookup st m) x
+_cX' d f st = pattern $ \x@(State _ m) -> query (maybe (pure d) (_getP_ f . valueToPattern) $ Map.lookup st m) x
 
 _defineDouble :: String -> Pattern Double
 _defineDouble = _cX' 0 _valToDouble

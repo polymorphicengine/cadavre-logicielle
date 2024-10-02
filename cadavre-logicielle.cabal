@@ -26,11 +26,11 @@ executable cl-server
                       Game.Hint
                       Game.Game
                       TidalExtension
-    build-depends:    base,
+    build-depends:    base >= 4.19,
                       text,
                       mtl,
                       containers,
-                      tidal == 1.9.5,
+                      tidal == 1.10.0,
                       tidal-link,
                       deepseq,
                       threepenny-gui,

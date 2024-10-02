@@ -25,8 +25,9 @@ import Data.Text (Text, pack, unpack)
 import Data.Time
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core as C hiding (get, text, value)
-import Sound.Tidal.Config as Conf
+import qualified Sound.Tidal.Clock as Clock
 import Sound.Tidal.Context hiding ((#))
+import Sound.Tidal.Stream.Config as Conf
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 
 createHaskellFunction name fn = do
@@ -62,12 +63,15 @@ configureStream = do
   return $
     Conf.defaultConfig
       { cVerbose = False,
-        cFrameTimespan = frameTimespan,
-        cEnableLink = linkB,
-        cProcessAhead = processAhead,
-        cSkipTicks = read skipTicks,
-        cQuantum = read quantum,
-        cBeatsPerCycle = read beatsPerCycle
+        cClockConfig =
+          Clock.defaultConfig
+            { Clock.cFrameTimespan = frameTimespan,
+              Clock.cEnableLink = linkB,
+              Clock.cProcessAhead = processAhead,
+              Clock.cSkipTicks = read skipTicks,
+              Clock.cQuantum = read quantum,
+              Clock.cBeatsPerCycle = read beatsPerCycle
+            }
       }
 
 getBootPaths :: UI (Maybe [Text])
