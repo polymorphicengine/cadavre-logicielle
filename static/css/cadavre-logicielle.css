@@ -23,12 +23,6 @@ pre::-webkit-scrollbar {
     font-family: monospace;
 }
 
-.message-time {
-    float: left;
-    color: white;
-    font-family: monospace;
-}
-
 body {
     background: #000;
     margin: 0px;

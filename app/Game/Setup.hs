@@ -43,6 +43,7 @@ setup win = void $ do
 
   let state = State udp [] [] mMV rMV str
   liftIO $ forkIO $ runUI win $ void $ runGame state playingTable
+  addMessage "Succesfully prepared the table. Ready to host the game."
 
 setupStream :: UI Stream
 setupStream = do

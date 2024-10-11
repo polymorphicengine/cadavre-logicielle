@@ -105,8 +105,11 @@ addElement className containerId el = do
 addMessage :: String -> UI ()
 addMessage m = do
   t <- liftIO getZonedTime
-  el <- mkMessage (show t) m
+  el <- mkMessage (showTime t) m
   addElement "message" "message-container" el
+
+showTime :: ZonedTime -> String
+showTime = take 8 . show . localTimeOfDay . zonedTimeToLocalTime
 
 infixl 8 #@
 
