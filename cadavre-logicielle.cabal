@@ -14,7 +14,7 @@ license-file:       LICENSE
 author:             Martin Gius
 maintainer:         gius_martin@yahoo.de
 build-type:         Simple
-extra-doc-files:    CHANGELOG.md, README.md
+extra-doc-files:    README.md
 
 executable cl-server
     main-is:          Main.hs

@@ -22,8 +22,7 @@ function handleClearStore(event) {
   store.clear();
 }
 
-const relBin =
-  "./dist-newstyle/build/x86_64-linux/ghc-9.8.2/cadavre-logicielle-0.1.0.0/x/cl-server/build/cl-server/cl-server";
+const relBin = "build/cl-server";
 
 // Assign a random port to run on.
 freeport((err, port) => {
