@@ -78,8 +78,8 @@ getTypeFromName ds n = fromMaybe "unkown type" (lookup n ns)
   where
     ns = map (\(Definition m x _ _) -> (m, x)) ds
 
-mkPlayer :: Player -> UI Element
-mkPlayer p = UI.p #. "player" #@ playerID p # set UI.text (pName p)
+mkName :: Player -> UI Element
+mkName p = UI.p #. "name" #@ nameID p # set UI.text (pName p)
 
 mkCode :: Player -> UI Element
 mkCode p = UI.pre #. "code" #@ codeID p # set UI.text (pCode p)
@@ -87,11 +87,11 @@ mkCode p = UI.pre #. "code" #@ codeID p # set UI.text (pCode p)
 codeID :: Player -> String
 codeID p = "code-" ++ pName p
 
-playerID :: Player -> String
-playerID p = "player-" ++ pName p
+nameID :: Player -> String
+nameID p = "player-" ++ pName p
 
-playerWrapper :: Player -> UI Element
-playerWrapper p = UI.div #+ [mkPlayer p, mkCode p] #. "player-wrapper"
+mkPlayer :: Player -> UI Element
+mkPlayer p = UI.div #+ [mkName p, mkCode p] #. "player-wrapper" #. "player"
 
 mkDefinition :: Definition -> UI Element
 mkDefinition d = UI.p #. "definition" #@ defID d # set UI.text (show d)
@@ -102,14 +102,17 @@ defID d = "def-" ++ dName d
 addPlayer :: Player -> Game ()
 addPlayer p = do
   ps <- gets sPlayers
-  unless
-    (pName p `elem` map pName ps)
-    ( do
-        el <- liftUI $ playerWrapper p
-        liftUI $ addMessage (pName p ++ " joined the table!")
-        liftUI $ addElement "player" "player-container" el
-        modify $ \st -> st {sPlayers = p : sPlayers st}
-    )
+  if pAddress p `elem` map pAddress ps
+    then renamePlayer (pName p) (pAddress p)
+    else do
+      unless
+        (pName p `elem` map pName ps)
+        ( do
+            el <- liftUI $ mkPlayer p
+            liftUI $ addMessage (pName p ++ " joined the table!")
+            liftUI $ addElement "player" "player-container" el
+            modify $ \st -> st {sPlayers = p : sPlayers st}
+        )
 
 addDefinition :: Definition -> RemoteAddress -> Game ()
 addDefinition d remote = do
@@ -207,5 +210,23 @@ getCodeElement p = do
   win <- askWindow
   elMay <- getElementById win (codeID p)
   case elMay of
-    Nothing -> playerWrapper p
+    Nothing -> mkCode p
     Just el -> return el
+
+getNameElement :: Player -> UI Element
+getNameElement p = do
+  win <- askWindow
+  elMay <- getElementById win (nameID p)
+  case elMay of
+    Nothing -> mkName p
+    Just el -> return el
+
+renamePlayer :: String -> RemoteAddress -> Game ()
+renamePlayer new add = do
+  mayp <- getPlayerFromAddress add
+  case mayp of
+    Nothing -> return ()
+    Just p -> do
+      el <- liftUI $ getNameElement p
+      void $ liftUI $ element el # set UI.text new
+      liftUI $ addMessage (pName p ++ " renamed themselves to " ++ new)
