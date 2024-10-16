@@ -91,7 +91,7 @@ nameID :: Player -> String
 nameID p = "player-" ++ pName p
 
 mkPlayer :: Player -> UI Element
-mkPlayer p = UI.div #+ [mkName p, mkCode p] #. "player-wrapper" #. "player"
+mkPlayer p = UI.div #+ [mkName p, mkCode p] #. "player"
 
 mkDefinition :: Definition -> UI Element
 mkDefinition d = UI.p #. "definition" #@ defID d # set UI.text (show d)
@@ -230,3 +230,10 @@ renamePlayer new add = do
       el <- liftUI $ getNameElement p
       void $ liftUI $ element el # set UI.text new
       liftUI $ addMessage (pName p ++ " renamed themselves to " ++ new)
+
+test :: String -> Game ()
+test name = do
+  el <- liftUI $ mkPlayer (Player name undefined "CODE")
+  liftUI $ addElement "player" "player-container" el
+
+-- modify $ \st -> st {sPlayers = p : sPlayers st}

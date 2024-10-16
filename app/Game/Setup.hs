@@ -42,7 +42,7 @@ setup win = void $ do
   udp <- liftIO $ udp_server 2323
 
   let state = State udp [] [] mMV rMV str
-  liftIO $ forkIO $ runUI win $ void $ runGame state playingTable
+  _ <- liftIO $ forkIO $ runUI win $ void $ runGame state playingTable
   addMessage "Succesfully prepared the table. Ready to host the game."
 
 setupStream :: UI Stream
