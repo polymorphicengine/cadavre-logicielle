@@ -3,7 +3,7 @@
 module Game.Game where
 
 import Control.Concurrent.MVar
-import Control.Monad (unless, when)
+import Control.Monad (unless, void, when)
 import Control.Monad.State (StateT, get, gets, lift, modify, runStateT)
 import Data.Maybe (fromMaybe)
 import Game.Hint
@@ -20,7 +20,8 @@ type RemoteAddress = N.SockAddr
 data Player
   = Player
   { pName :: String,
-    pAddress :: RemoteAddress
+    pAddress :: RemoteAddress,
+    pCode :: String
   }
 
 instance Eq Player where
@@ -64,10 +65,13 @@ instance MonadUI Game where
 runGame :: State -> Game a -> UI (a, State)
 runGame st g = runStateT g st
 
-getNameFromAddress :: RemoteAddress -> Game String
-getNameFromAddress add = do
+getPlayerFromAddress :: RemoteAddress -> Game (Maybe Player)
+getPlayerFromAddress add = do
   ps <- gets sPlayers
-  return $ fromMaybe "unkown player" (lookup add $ map (\(Player n a) -> (a, n)) ps)
+  return $ lookup add (map (\p@(Player n a _) -> (a, p)) ps)
+
+getNameFromAddress :: RemoteAddress -> Game String
+getNameFromAddress = fmap (maybe "unkown player" pName) . getPlayerFromAddress
 
 getTypeFromName :: Definitions -> String -> String
 getTypeFromName ds n = fromMaybe "unkown type" (lookup n ns)
@@ -77,8 +81,17 @@ getTypeFromName ds n = fromMaybe "unkown type" (lookup n ns)
 mkPlayer :: Player -> UI Element
 mkPlayer p = UI.p #. "player" #@ playerID p # set UI.text (pName p)
 
+mkCode :: Player -> UI Element
+mkCode p = UI.pre #. "code" #@ codeID p # set UI.text (pCode p)
+
+codeID :: Player -> String
+codeID p = "code-" ++ pName p
+
 playerID :: Player -> String
 playerID p = "player-" ++ pName p
+
+playerWrapper :: Player -> UI Element
+playerWrapper p = UI.div #+ [mkPlayer p, mkCode p] #. "player-wrapper"
 
 mkDefinition :: Definition -> UI Element
 mkDefinition d = UI.p #. "definition" #@ defID d # set UI.text (show d)
@@ -92,7 +105,7 @@ addPlayer p = do
   unless
     (pName p `elem` map pName ps)
     ( do
-        el <- liftUI $ mkPlayer p
+        el <- liftUI $ playerWrapper p
         liftUI $ addMessage (pName p ++ " joined the table!")
         liftUI $ addElement "player" "player-container" el
         modify $ \st -> st {sPlayers = p : sPlayers st}
@@ -158,6 +171,7 @@ interpretDefinition first def remote = do
 
 evaluateStatement :: String -> RemoteAddress -> Game ()
 evaluateStatement stat remote = do
+  updateCode stat remote
   hM <- gets sHintMessage
   hR <- gets sHintResponse
   liftIO $ putMVar hM (MStat stat)
@@ -178,3 +192,20 @@ getType typ remote = do
     RType t -> replyOKVal (show t) remote
     RError e -> replyError e remote
     _ -> replyError "unkown hint error" remote
+
+updateCode :: String -> RemoteAddress -> Game ()
+updateCode code add = do
+  mayp <- getPlayerFromAddress add
+  case mayp of
+    Nothing -> return ()
+    Just p -> do
+      el <- liftUI $ getCodeElement p
+      void $ liftUI $ element el # set UI.text code
+
+getCodeElement :: Player -> UI Element
+getCodeElement p = do
+  win <- askWindow
+  elMay <- getElementById win (codeID p)
+  case elMay of
+    Nothing -> playerWrapper p
+    Just el -> return el

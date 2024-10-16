@@ -62,7 +62,7 @@ sayAction say remote = do
   liftUI $ addMessage (name ++ " says " ++ say)
 
 sitAction :: String -> RemoteAddress -> Game ()
-sitAction name remote = addPlayer (Player name remote) >> replyOK remote
+sitAction name remote = addPlayer (Player name remote "") >> replyOK remote
 
 defineAction :: String -> String -> String -> String -> RemoteAddress -> Game ()
 defineAction name typ code def remote = broadcast (p_message "/define" [O.string name, O.string typ]) >> addDefinition (Definition name typ code def) remote

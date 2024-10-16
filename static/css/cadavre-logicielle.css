@@ -1,12 +1,3 @@
-.outputBox {
-    height: 15vh;
-    overflow-y: auto;
-    resize: vertical;
-    unicode-bidi: embed;
-    font-family: monospace;
-    white-space: pre;
-}
-
 pre::-webkit-scrollbar {
     display: none;
 }
@@ -23,15 +14,26 @@ pre::-webkit-scrollbar {
     padding: 10px;
     grid-column: 2;
     grid-row: 1/3;
+    overflow: auto;
+}
+
+.message-container::-webkit-scrollbar {
+    display: none;
 }
 
 .player-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     border: 2px solid #dedede;
     border-radius: 2px;
     grid-column: 1;
     grid-row: 1/4;
+    background-color: black;
+}
+
+.player-wrapper {
+    border: 2px solid #dedede;
+    border-radius: 2px;
 }
 
 .definition-container {
@@ -41,6 +43,7 @@ pre::-webkit-scrollbar {
     border-radius: 2px;
     grid-column: 2;
     grid-row: 3/4;
+    background-color: black;
 }
 
 .message {
@@ -49,7 +52,7 @@ pre::-webkit-scrollbar {
 }
 
 body {
-    background: #000;
+    background: black;
     margin: 0px;
     padding: 0px;
     width: 100%;
