@@ -1,6 +1,6 @@
 execpath := $(shell cabal list-bin cl-server)
 start:
-	cabal build
+	cabal build --write-ghc-environment-files=always
 	-rm -r build
 	mkdir build
 	cp $(execpath) build

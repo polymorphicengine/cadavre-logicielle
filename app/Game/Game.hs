@@ -128,6 +128,7 @@ addDefinition d remote = do
       ( do
           el <- liftUI $ mkDefinition d
           liftUI $ addMessage (name ++ " folded the document and revealed " ++ show d)
+          broadcast (p_message "/define" [O.string name, O.string $ dName d, O.string $ dType d])
           liftUI $ addElement "definition" "definition-container" el
           interpretDefinition True d remote
           modify $ \st -> st {sDefinitions = d : sDefinitions st}
@@ -145,7 +146,6 @@ replyOKVal str = flip reply (O.p_message "/ok" [O.string str])
 replyError :: String -> RemoteAddress -> Game ()
 replyError err = flip reply (O.p_message "/error" [O.string err])
 
--- returns true for success, false otherwise
 interpretDefinition :: Bool -> Definition -> RemoteAddress -> Game ()
 interpretDefinition first def remote = do
   hM <- gets sHintMessage
@@ -167,6 +167,7 @@ interpretDefinition first def remote = do
           else do
             name <- getNameFromAddress remote
             liftUI $ addMessage (name ++ " changed the definition of " ++ dName def)
+            broadcast (p_message "/change" [O.string name, O.string (dName def)])
             replyOK remote
       )
     RError e -> replyError e remote
@@ -230,10 +231,16 @@ renamePlayer new add = do
       el <- liftUI $ getNameElement p
       void $ liftUI $ element el # set UI.text new
       liftUI $ addMessage (pName p ++ " renamed themselves to " ++ new)
+      modify $ \st -> st {sPlayers = map (\q -> if pAddress q == add then q {pName = new} else q) $ sPlayers st}
 
 test :: String -> Game ()
 test name = do
   el <- liftUI $ mkPlayer (Player name undefined "CODE")
   liftUI $ addElement "player" "player-container" el
 
--- modify $ \st -> st {sPlayers = p : sPlayers st}
+-- broadcast to all connected players
+broadcast :: O.Packet -> Game ()
+broadcast m = do
+  ps <- gets sPlayers
+  local <- gets sLocal
+  mapM_ (liftIO . O.sendTo local m . pAddress) ps

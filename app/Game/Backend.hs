@@ -41,13 +41,6 @@ act (Just (Message "/type" [AsciiString typ]), remote) = getType (ascii_to_strin
 act (Just _, remote) = unhandledAction remote
 act _ = return ()
 
--- broadcast to all connected players
-broadcast :: O.Packet -> Game ()
-broadcast m = do
-  ps <- gets sPlayers
-  local <- gets sLocal
-  mapM_ (liftIO . O.sendTo local m . pAddress) ps
-
 pingAction :: RemoteAddress -> Game ()
 pingAction remote = do
   replyOK remote
@@ -58,14 +51,17 @@ sayAction :: String -> RemoteAddress -> Game ()
 sayAction say remote = do
   replyOK remote
   name <- getNameFromAddress remote
-  broadcast (p_message "/say" [O.string name, O.string say])
+  broadcast (p_message "/message" [O.string (name ++ " says " ++ say)])
   liftUI $ addMessage (name ++ " says " ++ say)
 
 sitAction :: String -> RemoteAddress -> Game ()
-sitAction name remote = addPlayer (Player name remote "") >> replyOK remote
+sitAction name remote = do
+  addPlayer (Player name remote "")
+  replyOK remote
+  broadcast (p_message "/joined" [O.string name])
 
 defineAction :: String -> String -> String -> String -> RemoteAddress -> Game ()
-defineAction name typ code def remote = broadcast (p_message "/define" [O.string name, O.string typ]) >> addDefinition (Definition name typ code def) remote
+defineAction name typ code def = addDefinition (Definition name typ code def)
 
 unhandledAction :: RemoteAddress -> Game ()
 unhandledAction remote = do
