@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Game.Hint where
 
 import Control.Concurrent.MVar (MVar, putMVar, takeMVar)
@@ -45,6 +47,7 @@ staticInterpreter str = do
   Hint.set [languageExtensions := extensions]
   Hint.setImportsF [ModuleImport x NotQualified NoImportList | x <- ["Sound.Tidal.Context", "Data.IORef", "Prelude", "TidalExtension"]]
   bind "tidal" str
+  interpretFile "static/boot.hs"
 
 -- this is the intrepreter receiving and interpreteing messages and sending the results back
 interpreterLoop :: MVar InterpreterMessage -> MVar InterpreterResponse -> Interpreter ()
@@ -79,11 +82,10 @@ interpretType cont rMV = do
     Left errors -> liftIO $ putMVar rMV $ RError $ intercalate "\n" $ map errMsg errors
     Right out -> liftIO $ putMVar rMV $ RType out
 
--- interpretFile :: String -> MVar InterpreterResponse -> Interpreter ()
--- interpretFile path rMV = do
---   cont <- liftIO $ readFile path
---   let bs = blocks cont
---   catch ((sequence $ map Hint.runStmt bs) >> (liftIO $ putMVar rMV $ RStat Nothing) >> return ()) (\e -> liftIO $ putMVar rMV $ RError $ parseError e)
+interpretFile :: String -> Interpreter ()
+interpretFile path = do
+  cont <- liftIO $ readFile path
+  catch (Hint.runStmt cont) (\(e :: SomeException) -> error $ displayException e)
 
 bind :: String -> Stream -> Interpreter ()
 bind var value = do
