@@ -24,9 +24,10 @@ addPlayer p = do
         (pName p `elem` map pName ps)
         ( do
             el <- liftUI $ mkPlayer p
-            liftUI $ addMessage (pName p ++ " joined the table!")
             liftUI $ addElement "player" "player-container" el
+            liftUI $ addMessage (pName p ++ " joined the table!")
             modify $ \st -> st {sPlayers = p : sPlayers st}
+            shareDefinitions p
         )
 
 renamePlayer :: String -> RemoteAddress -> Game ()
@@ -49,8 +50,10 @@ updateCode code add = do
       el <- liftUI $ getCodeElement p
       void $ liftUI $ element el # set text code
 
--- shareDefinitions :: Player -> Game ()
--- shareDefinitions p = reply (p_message "/define" [O.string name, O.string $ dName d, O.string $ dType d])
+shareDefinitions :: Player -> Game ()
+shareDefinitions p = do
+  ds <- gets sDefinitions
+  mapM_ (\d -> reply (pAddress p) (O.p_message "/define" [O.string (pName p), O.string $ dName d, O.string $ dType d])) ds
 
 --------------------------------------------------------
 ----------------- definition actions -------------------
