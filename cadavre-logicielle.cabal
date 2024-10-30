@@ -25,6 +25,9 @@ executable cl-server
                       Game.CommandLine
                       Game.Hint
                       Game.Game
+                      Game.Actions
+                      Game.Types
+                      Game.Config
                       TidalExtension
     build-depends:    base >= 4.19,
                       text,

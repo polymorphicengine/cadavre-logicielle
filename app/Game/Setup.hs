@@ -24,9 +24,11 @@ import Control.Concurrent (forkIO)
 import Control.Concurrent.MVar (MVar, newEmptyMVar)
 import Control.Monad (void)
 import Game.Backend
+import Game.Config
 import Game.Frontend
 import Game.Game
 import Game.Hint
+import Game.Types
 import Game.UI
 import Graphics.UI.Threepenny.Core as C hiding (defaultConfig, text)
 import Sound.Osc.Fd as O

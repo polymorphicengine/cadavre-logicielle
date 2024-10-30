@@ -20,7 +20,8 @@ module Game.Backend where
 
 import Control.Monad.State (gets)
 import Data.Bifunctor
-import Game.Game
+import Game.Actions
+import Game.Types
 import Game.UI
 import Graphics.UI.Threepenny.Core as C hiding (text)
 import Sound.Osc.Fd as O
@@ -37,7 +38,7 @@ act (Just (Message "/say" [AsciiString x]), remote) = sayAction (ascii_to_string
 act (Just (Message "/sit" [AsciiString x]), remote) = sitAction (ascii_to_string x) remote
 act (Just (Message "/define" [AsciiString n, AsciiString t, AsciiString c, AsciiString d]), remote) = defineAction (ascii_to_string n) (ascii_to_string t) (ascii_to_string c) (ascii_to_string d) remote
 act (Just (Message "/eval" [AsciiString stat]), remote) = evaluateStatement (ascii_to_string stat) remote
-act (Just (Message "/type" [AsciiString typ]), remote) = getType (ascii_to_string typ) remote
+act (Just (Message "/type" [AsciiString typ]), remote) = typeAction (ascii_to_string typ) remote
 act (Just _, remote) = unhandledAction remote
 act _ = return ()
 
