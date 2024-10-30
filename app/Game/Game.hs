@@ -79,7 +79,7 @@ getTypeFromName ds n = fromMaybe "unkown type" (lookup n ns)
     ns = map (\(Definition m x _ _) -> (m, x)) ds
 
 mkName :: Player -> UI Element
-mkName p = UI.p #. "name" #@ nameID p # set UI.text (pName p)
+mkName p = UI.pre #. "name" #@ nameID p # set UI.text (pName p)
 
 mkCode :: Player -> UI Element
 mkCode p = UI.pre #. "code" #@ codeID p # set UI.text (pCode p)
@@ -94,7 +94,7 @@ mkPlayer :: Player -> UI Element
 mkPlayer p = UI.div #+ [mkName p, mkCode p] #. "player"
 
 mkDefinition :: Definition -> UI Element
-mkDefinition d = UI.p #. "definition" #@ defID d # set UI.text (show d)
+mkDefinition d = UI.pre #. "definition" #@ defID d # set UI.text (show d)
 
 defID :: Definition -> String
 defID d = "def-" ++ dName d
