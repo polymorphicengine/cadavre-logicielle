@@ -26,7 +26,6 @@ import Control.Monad (void)
 import Game.Backend
 import Game.Config
 import Game.Frontend
-import Game.Game
 import Game.Hint
 import Game.Types
 import Game.UI
