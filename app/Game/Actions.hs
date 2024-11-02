@@ -43,15 +43,6 @@ renamePlayer new add = do
       liftUI $ addMessage (pName p ++ " renamed themselves to " ++ new)
       modify $ \st -> st {sPlayers = map (\q -> if pAddress q == add then q {pName = new} else q) $ sPlayers st}
 
-updateCode :: String -> RemoteAddress -> Game ()
-updateCode code add = do
-  mayp <- getPlayerFromAddress add
-  case mayp of
-    Nothing -> return ()
-    Just p -> do
-      el <- liftUI $ getCodeElement p
-      void $ liftUI $ element el # set text code
-
 shareDefinitions :: Player -> Game ()
 shareDefinitions p = do
   ds <- gets sDefinitions
@@ -61,50 +52,60 @@ shareDefinitions p = do
 ----------------- definition actions -------------------
 --------------------------------------------------------
 
-addDefinition :: Definition -> RemoteAddress -> Game ()
-addDefinition d remote = do
+addDefinition :: String -> String -> RemoteAddress -> Game ()
+addDefinition name code remote = do
   ds <- gets sDefinitions
-  name <- getNameFromAddress remote
-  if dName d `elem` map dName ds
-    then
+  pname <- getNameFromAddress remote
+  case lookup name (map (\x@(Definition n _ _) -> (n, x)) ds) of
+    Just d ->
       unless
         -- already defined variables cannot change type
         (dType d /= getTypeFromName ds (dName d))
-        (interpretDefinition False d remote)
-    else
-      ( do
-          el <- liftUI $ mkDefinition d
-          liftUI $ addMessage (name ++ " folded the document and revealed " ++ show d)
-          broadcast (O.p_message "/define" [utf8String name, utf8String $ dName d, utf8String $ dType d])
-          liftUI $ addElement "definition" "definition-container" el
-          interpretDefinition True d remote
-          modify $ \st -> st {sDefinitions = d : sDefinitions st}
-      )
+        (void (interpretDefinition False (dName d) (dCode d) remote))
+    Nothing -> do
+      typ <- interpretDefinition True name code remote
+      let d = Definition name typ code
+      el <- liftUI $ mkDefinition d
+      liftUI $ addMessage (pname ++ " folded the document and revealed " ++ show d)
+      broadcast (O.p_message "/define" [utf8String pname, utf8String $ dName d, utf8String $ dType d])
+      liftUI $ addElement "definition" "definition-container" el
+      modify $ \st -> st {sDefinitions = d : sDefinitions st}
 
-interpretDefinition :: Bool -> Definition -> RemoteAddress -> Game ()
-interpretDefinition first def remote = do
+generateStreamCode :: String -> String -> String
+generateStreamCode name code = "streamSet tidal " ++ show name ++ " $ " ++ code
+
+generateDefCode :: String -> String -> String
+generateDefCode typ name = "let " ++ name ++ " = _define " ++ show name ++ " :: " ++ typ
+
+interpretDefinition :: Bool -> String -> String -> RemoteAddress -> Game String
+interpretDefinition first name code remote = do
   hM <- gets sHintMessage
   hR <- gets sHintResponse
-  liftIO $ putMVar hM (MStat $ dCode def)
-  response <- liftIO $ takeMVar hR
-  case response of
-    RStat Nothing ->
-      ( if first
-          then do
-            liftIO $ putMVar hM (MStat $ dDef def)
-            response2 <- liftIO $ takeMVar hR
-            case response2 of
-              RStat Nothing -> replyOK remote
-              RError e -> replyError e remote
-              _ -> replyError "unkown hint error" remote
-          else do
-            name <- getNameFromAddress remote
-            liftUI $ addMessage (name ++ " changed the definition of " ++ dName def)
-            broadcast (O.p_message "/change" [utf8String name, utf8String (dName def)])
-            replyOK remote
-      )
-    RError e -> replyError e remote
-    _ -> replyError "unkown hint error" remote
+  liftIO $ putMVar hM (MType code)
+  responseType <- liftIO $ takeMVar hR
+  case responseType of
+    RError e -> replyError e remote >> return ""
+    RType typ -> do
+      liftIO $ putMVar hM (MStat $ generateStreamCode name code)
+      responseStream <- liftIO $ takeMVar hR
+      case responseStream of
+        RStat Nothing ->
+          if first
+            then do
+              liftIO $ putMVar hM (MStat $ generateDefCode typ name)
+              responseDef <- liftIO $ takeMVar hR
+              case responseDef of
+                RStat Nothing -> replyOK remote >> return typ
+                RError e -> replyError e remote >> return typ
+                _ -> replyError "unkown hint error" remote >> return typ
+            else do
+              pname <- getNameFromAddress remote
+              liftUI $ addMessage (pname ++ " changed the definition of " ++ name)
+              broadcast (O.p_message "/change" [utf8String pname, utf8String name])
+              replyOK remote >> return typ
+        RError e -> replyError e remote >> return typ
+        _ -> replyError "unkown hint error" remote >> return typ
+    _ -> replyError "unkown hint error" remote >> return ""
 
 --------------------------------------------------------
 -------------------- code actions ----------------------
@@ -122,6 +123,15 @@ evaluateStatement stat remote = do
     RStat (Just v) -> replyOKVal (show v) remote
     RError e -> replyError e remote
     _ -> replyError "unkown hint error" remote
+
+updateCode :: String -> RemoteAddress -> Game ()
+updateCode code add = do
+  mayp <- getPlayerFromAddress add
+  case mayp of
+    Nothing -> return ()
+    Just p -> do
+      el <- liftUI $ getCodeElement p
+      void $ liftUI $ element el # set text code
 
 typeAction :: String -> RemoteAddress -> Game ()
 typeAction typ remote = do
@@ -157,7 +167,7 @@ getNameElement p = do
 getPlayerFromAddress :: RemoteAddress -> Game (Maybe Player)
 getPlayerFromAddress add = do
   ps <- gets sPlayers
-  return $ lookup add (map (\p@(Player n a _ _) -> (a, p)) ps)
+  return $ lookup add (map (\p@(Player _ a _ _) -> (a, p)) ps)
 
 getNameFromAddress :: RemoteAddress -> Game String
 getNameFromAddress = fmap (maybe "unkown player" pName) . getPlayerFromAddress
@@ -165,7 +175,7 @@ getNameFromAddress = fmap (maybe "unkown player" pName) . getPlayerFromAddress
 getTypeFromName :: Definitions -> String -> String
 getTypeFromName ds n = fromMaybe "unkown type" (lookup n ns)
   where
-    ns = map (\(Definition m x _ _) -> (m, x)) ds
+    ns = map (\(Definition m x _) -> (m, x)) ds
 
 --------------------------------------------------------
 ---------------- replying to clients -------------------

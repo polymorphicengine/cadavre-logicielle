@@ -34,12 +34,11 @@ data Definition
   = Definition
   { dName :: String,
     dType :: String,
-    dCode :: String,
-    dDef :: String
+    dCode :: String
   }
 
 instance Show Definition where
-  show (Definition n t _ _) = n ++ " :: " ++ t
+  show (Definition n t _) = n ++ " :: " ++ t
 
 type Definitions = [Definition]
 

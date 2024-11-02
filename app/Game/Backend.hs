@@ -36,7 +36,7 @@ act :: (Maybe O.Message, RemoteAddress) -> Game ()
 act (Just (Message "/ping" []), remote) = pingAction remote
 act (Just (Message "/say" [AsciiString x]), remote) = sayAction (toUTF8 x) remote
 act (Just (Message "/sit" [AsciiString x, Int32 orb]), remote) = sitAction (toUTF8 x) (fromIntegral orb) remote
-act (Just (Message "/define" [AsciiString n, AsciiString t, AsciiString c, AsciiString d]), remote) = defineAction (toUTF8 n) (toUTF8 t) (toUTF8 c) (toUTF8 d) remote
+act (Just (Message "/define" [AsciiString name, AsciiString code]), remote) = defineAction (toUTF8 name) (toUTF8 code) remote
 act (Just (Message "/eval" [AsciiString stat]), remote) = evaluateStatement (toUTF8 stat) remote
 act (Just (Message "/type" [AsciiString typ]), remote) = typeAction (toUTF8 typ) remote
 act (Just _, remote) = unhandledAction remote
@@ -61,8 +61,8 @@ sitAction name orb remote = do
   replyOK remote
   broadcast (p_message "/joined" [utf8String name, O.Int32 $ fromIntegral orb])
 
-defineAction :: String -> String -> String -> String -> RemoteAddress -> Game ()
-defineAction name typ code def = addDefinition (Definition name typ code def)
+defineAction :: String -> String -> RemoteAddress -> Game ()
+defineAction = addDefinition
 
 unhandledAction :: RemoteAddress -> Game ()
 unhandledAction remote = do

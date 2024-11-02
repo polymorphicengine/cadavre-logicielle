@@ -12,80 +12,82 @@ instance Valuable (String, Value) where
 instance Valuable ValueMap where
   toValue vm = VList $ map toValue (Map.toList vm)
 
+class Unvaluable a where
+  fromValue :: Value -> Maybe a
+  defaultValue :: a
+
 _cX' :: a -> (Value -> Maybe a) -> String -> Pattern a
 _cX' d f st = pattern $ \x@(State _ m) -> query (maybe (pure d) (_getP_ f . valueToPattern) $ Map.lookup st m) x
 
-_defineDouble :: String -> Pattern Double
-_defineDouble = _cX' 0 _valToDouble
+_define :: (Unvaluable a) => String -> Pattern a
+_define = _cX' defaultValue fromValue
 
-_defineInt :: String -> Pattern Int
-_defineInt = _cX' 0 _valToInt
+instance Unvaluable Double where
+  fromValue (VF x) = Just x
+  fromValue _ = Nothing
+  defaultValue = 0
 
-_defineNote :: String -> Pattern Note
-_defineNote = _cX' 0 _valToNote
+instance Unvaluable Int where
+  fromValue (VI x) = Just x
+  fromValue _ = Nothing
+  defaultValue = 0
 
-_defineTime :: String -> Pattern Time
-_defineTime = _cX' 0 _valToTime
+instance Unvaluable Note where
+  fromValue (VN x) = Just x
+  fromValue _ = Nothing
+  defaultValue = 0
 
-_defineBool :: String -> Pattern Bool
-_defineBool = _cX' False _valToBool
+instance Unvaluable Time where
+  fromValue (VR x) = Just x
+  fromValue _ = Nothing
+  defaultValue = 0
 
-_defineString :: String -> Pattern String
-_defineString = _cX' "" _valToString
+instance Unvaluable String where
+  fromValue (VS x) = Just x
+  fromValue _ = Nothing
+  defaultValue = ""
 
-_defineVM :: String -> Pattern ValueMap
-_defineVM = _cX' Map.empty _valToVM
+instance Unvaluable Bool where
+  fromValue (VB x) = Just x
+  fromValue _ = Nothing
+  defaultValue = False
 
-_valToDouble :: Value -> Maybe Double
-_valToDouble (VF x) = Just x
-_valToDouble _ = Nothing
+instance Unvaluable ValueMap where
+  fromValue (VList xs) = Just (Map.fromList $ concatMap toTuples xs)
+    where
+      toTuples (VList [k, v]) = case fromValue k of
+        Just st -> [(st, v)]
+        Nothing -> []
+      toTuples _ = []
+  fromValue _ = Nothing
+  defaultValue = Map.empty
 
-_valToInt :: Value -> Maybe Int
-_valToInt (VI x) = Just x
-_valToInt _ = Nothing
+type SamplePattern = Pattern String
 
-_valToNote :: Value -> Maybe Note
-_valToNote (VN x) = Just x
-_valToNote _ = Nothing
+type NotePattern = Pattern Note
 
-_valToTime :: Value -> Maybe Time
-_valToTime (VR x) = Just x
-_valToTime _ = Nothing
+type FreqPattern = Pattern Double
 
-_valToString :: Value -> Maybe String
-_valToString (VS x) = Just x
-_valToString _ = Nothing
+type TimePattern = Pattern Time
 
-_valToBool :: Value -> Maybe Bool
-_valToBool (VB x) = Just x
-_valToBool _ = Nothing
+type IntPattern = Pattern Int
 
-_valToVM :: Value -> Maybe ValueMap
-_valToVM (VList xs) = Just (Map.fromList $ concatMap toTuples xs)
-  where
-    toTuples (VList [k, v]) = case _valToString k of
-      Just st -> [(st, v)]
-      Nothing -> []
-    toTuples _ = []
-_valToVM _ = Nothing
+type BoolPattern = Pattern Bool
 
-streamSetDouble :: Stream -> String -> Pattern Double -> IO ()
-streamSetDouble = streamSet
+sample :: SamplePattern -> SamplePattern
+sample = id
 
-streamSetInt :: Stream -> String -> Pattern Int -> IO ()
-streamSetInt = streamSet
+notep :: NotePattern -> NotePattern
+notep = id
 
-streamSetBool :: Stream -> String -> Pattern Bool -> IO ()
-streamSetBool = streamSet
+freqp :: FreqPattern -> FreqPattern
+freqp = id
 
-streamSetNote :: Stream -> String -> Pattern Note -> IO ()
-streamSetNote = streamSet
+time :: TimePattern -> TimePattern
+time = id
 
-streamSetVM :: Stream -> String -> Pattern ValueMap -> IO ()
-streamSetVM = streamSet
+int :: IntPattern -> IntPattern
+int = id
 
-streamSetString :: Stream -> String -> Pattern String -> IO ()
-streamSetString = streamSet
-
-streamSetTime :: Stream -> String -> Pattern Time -> IO ()
-streamSetTime = streamSet
+bool :: BoolPattern -> BoolPattern
+bool = id
