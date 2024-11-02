@@ -19,7 +19,8 @@ data Player
   = Player
   { pName :: String,
     pAddress :: RemoteAddress,
-    pCode :: String
+    pCode :: String,
+    pOrbit :: Int
   }
 
 instance Eq Player where

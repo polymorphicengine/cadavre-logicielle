@@ -157,7 +157,7 @@ getNameElement p = do
 getPlayerFromAddress :: RemoteAddress -> Game (Maybe Player)
 getPlayerFromAddress add = do
   ps <- gets sPlayers
-  return $ lookup add (map (\p@(Player n a _) -> (a, p)) ps)
+  return $ lookup add (map (\p@(Player n a _ _) -> (a, p)) ps)
 
 getNameFromAddress :: RemoteAddress -> Game String
 getNameFromAddress = fmap (maybe "unkown player" pName) . getPlayerFromAddress

@@ -35,7 +35,7 @@ recvMessageFrom = gets sLocal >>= \u -> liftIO $ fmap (first packet_to_message) 
 act :: (Maybe O.Message, RemoteAddress) -> Game ()
 act (Just (Message "/ping" []), remote) = pingAction remote
 act (Just (Message "/say" [AsciiString x]), remote) = sayAction (toUTF8 x) remote
-act (Just (Message "/sit" [AsciiString x]), remote) = sitAction (toUTF8 x) remote
+act (Just (Message "/sit" [AsciiString x, Int32 orb]), remote) = sitAction (toUTF8 x) (fromIntegral orb) remote
 act (Just (Message "/define" [AsciiString n, AsciiString t, AsciiString c, AsciiString d]), remote) = defineAction (toUTF8 n) (toUTF8 t) (toUTF8 c) (toUTF8 d) remote
 act (Just (Message "/eval" [AsciiString stat]), remote) = evaluateStatement (toUTF8 stat) remote
 act (Just (Message "/type" [AsciiString typ]), remote) = typeAction (toUTF8 typ) remote
@@ -55,11 +55,11 @@ sayAction say remote = do
   broadcast (p_message "/message" [utf8String (name ++ " says " ++ say)])
   liftUI $ addMessage (name ++ " says " ++ say)
 
-sitAction :: String -> RemoteAddress -> Game ()
-sitAction name remote = do
-  addPlayer (Player name remote "")
+sitAction :: String -> Int -> RemoteAddress -> Game ()
+sitAction name orb remote = do
+  addPlayer (Player name remote "" orb)
   replyOK remote
-  broadcast (p_message "/joined" [utf8String name])
+  broadcast (p_message "/joined" [utf8String name, O.Int32 $ fromIntegral orb])
 
 defineAction :: String -> String -> String -> String -> RemoteAddress -> Game ()
 defineAction name typ code def = addDefinition (Definition name typ code def)
