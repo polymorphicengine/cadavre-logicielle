@@ -34,11 +34,11 @@ recvMessageFrom = gets sLocal >>= \u -> liftIO $ fmap (first packet_to_message) 
 
 act :: (Maybe O.Message, RemoteAddress) -> Game ()
 act (Just (Message "/ping" []), remote) = pingAction remote
-act (Just (Message "/say" [AsciiString x]), remote) = sayAction (ascii_to_string x) remote
-act (Just (Message "/sit" [AsciiString x]), remote) = sitAction (ascii_to_string x) remote
-act (Just (Message "/define" [AsciiString n, AsciiString t, AsciiString c, AsciiString d]), remote) = defineAction (ascii_to_string n) (ascii_to_string t) (ascii_to_string c) (ascii_to_string d) remote
-act (Just (Message "/eval" [AsciiString stat]), remote) = evaluateStatement (ascii_to_string stat) remote
-act (Just (Message "/type" [AsciiString typ]), remote) = typeAction (ascii_to_string typ) remote
+act (Just (Message "/say" [AsciiString x]), remote) = sayAction (toUTF8 x) remote
+act (Just (Message "/sit" [AsciiString x]), remote) = sitAction (toUTF8 x) remote
+act (Just (Message "/define" [AsciiString n, AsciiString t, AsciiString c, AsciiString d]), remote) = defineAction (toUTF8 n) (toUTF8 t) (toUTF8 c) (toUTF8 d) remote
+act (Just (Message "/eval" [AsciiString stat]), remote) = evaluateStatement (toUTF8 stat) remote
+act (Just (Message "/type" [AsciiString typ]), remote) = typeAction (toUTF8 typ) remote
 act (Just _, remote) = unhandledAction remote
 act _ = return ()
 
@@ -52,14 +52,14 @@ sayAction :: String -> RemoteAddress -> Game ()
 sayAction say remote = do
   replyOK remote
   name <- getNameFromAddress remote
-  broadcast (p_message "/message" [O.string (name ++ " says " ++ say)])
+  broadcast (p_message "/message" [utf8String (name ++ " says " ++ say)])
   liftUI $ addMessage (name ++ " says " ++ say)
 
 sitAction :: String -> RemoteAddress -> Game ()
 sitAction name remote = do
   addPlayer (Player name remote "")
   replyOK remote
-  broadcast (p_message "/joined" [O.string name])
+  broadcast (p_message "/joined" [utf8String name])
 
 defineAction :: String -> String -> String -> String -> RemoteAddress -> Game ()
 defineAction name typ code def = addDefinition (Definition name typ code def)

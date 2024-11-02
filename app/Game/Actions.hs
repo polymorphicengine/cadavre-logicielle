@@ -4,6 +4,8 @@ import Control.Concurrent.MVar (putMVar, takeMVar)
 import Control.Monad (unless, void)
 import Control.Monad.State
 import Data.Maybe (fromMaybe)
+import Data.Text as T (pack, unpack)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Game.Hint
 import Game.Types
 import Game.UI
@@ -53,7 +55,7 @@ updateCode code add = do
 shareDefinitions :: Player -> Game ()
 shareDefinitions p = do
   ds <- gets sDefinitions
-  mapM_ (\d -> reply (pAddress p) (O.p_message "/define" [O.string (pName p), O.string $ dName d, O.string $ dType d])) ds
+  mapM_ (\d -> reply (pAddress p) (O.p_message "/define" [utf8String (pName p), utf8String $ dName d, utf8String $ dType d])) ds
 
 --------------------------------------------------------
 ----------------- definition actions -------------------
@@ -73,7 +75,7 @@ addDefinition d remote = do
       ( do
           el <- liftUI $ mkDefinition d
           liftUI $ addMessage (name ++ " folded the document and revealed " ++ show d)
-          broadcast (O.p_message "/define" [O.string name, O.string $ dName d, O.string $ dType d])
+          broadcast (O.p_message "/define" [utf8String name, utf8String $ dName d, utf8String $ dType d])
           liftUI $ addElement "definition" "definition-container" el
           interpretDefinition True d remote
           modify $ \st -> st {sDefinitions = d : sDefinitions st}
@@ -98,7 +100,7 @@ interpretDefinition first def remote = do
           else do
             name <- getNameFromAddress remote
             liftUI $ addMessage (name ++ " changed the definition of " ++ dName def)
-            broadcast (O.p_message "/change" [O.string name, O.string (dName def)])
+            broadcast (O.p_message "/change" [utf8String name, utf8String (dName def)])
             replyOK remote
       )
     RError e -> replyError e remote
@@ -176,10 +178,10 @@ replyOK :: RemoteAddress -> Game ()
 replyOK = flip reply (O.p_message "/ok" [])
 
 replyOKVal :: String -> RemoteAddress -> Game ()
-replyOKVal str = flip reply (O.p_message "/ok" [O.string str])
+replyOKVal str = flip reply (O.p_message "/ok" [utf8String str])
 
 replyError :: String -> RemoteAddress -> Game ()
-replyError err = flip reply (O.p_message "/error" [O.string err])
+replyError err = flip reply (O.p_message "/error" [utf8String err])
 
 -- broadcast to all connected players
 broadcast :: O.Packet -> Game ()
@@ -187,3 +189,9 @@ broadcast m = do
   ps <- gets sPlayers
   local <- gets sLocal
   mapM_ (liftIO . O.sendTo local m . pAddress) ps
+
+utf8String :: String -> O.Datum
+utf8String s = O.AsciiString $ encodeUtf8 $ T.pack s
+
+toUTF8 :: O.Ascii -> String
+toUTF8 x = T.unpack $ decodeUtf8 x
