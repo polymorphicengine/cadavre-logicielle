@@ -10,7 +10,8 @@ import Game.Hint
 import Game.Types
 import Game.UI
 import Graphics.UI.Threepenny as UI (Element, UI, askWindow, element, getElementById, liftUI, set, text, (#))
-import qualified Sound.Osc as O
+import Sound.Osc.Fd as O
+import qualified Sound.Osc.Transport.Fd.Udp as O
 
 --------------------------------------------------------
 ------------------- player actions ---------------------

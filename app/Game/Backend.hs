@@ -26,12 +26,13 @@ import Game.Types
 import Game.UI
 import Graphics.UI.Threepenny.Core as C hiding (text)
 import Sound.Osc.Fd as O
+import qualified Sound.Osc.Transport.Fd.Udp as O
 
 playingTable :: Game ()
 playingTable = recvMessageFrom >>= act >> playingTable
 
 recvMessageFrom :: Game (Maybe Message, RemoteAddress)
-recvMessageFrom = gets sLocal >>= \u -> liftIO $ fmap (first packet_to_message) (recvFrom u)
+recvMessageFrom = gets sLocal >>= \u -> liftIO $ fmap (first packet_to_message) (O.recvFrom u)
 
 act :: (Maybe O.Message, RemoteAddress) -> Game ()
 act (Just (Message "/ping" []), remote) = pingAction remote

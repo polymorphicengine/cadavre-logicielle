@@ -30,7 +30,7 @@ import Game.Hint
 import Game.Types
 import Game.UI
 import Graphics.UI.Threepenny.Core as C hiding (defaultConfig, text)
-import Sound.Osc.Fd as O
+import qualified Sound.Osc.Transport.Fd.Udp as O
 import Sound.Tidal.Stream
 
 setup :: Window -> UI ()
@@ -40,7 +40,7 @@ setup win = void $ do
   (mMV, rMV) <- setupHint str
 
   -- listening address
-  udp <- liftIO $ udp_server 2323
+  udp <- liftIO $ O.udp_server 2323
 
   let state = State udp [] [] mMV rMV str
   _ <- liftIO $ forkIO $ runUI win $ void $ runGame state playingTable

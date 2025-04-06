@@ -41,7 +41,7 @@ executable cl-server
                       directory,
                       optparse-applicative,
                       network,
-                      hosc,
+                      hosc >= 0.21 && < 0.22,
                       time,
                       hint
     hs-source-dirs:   app

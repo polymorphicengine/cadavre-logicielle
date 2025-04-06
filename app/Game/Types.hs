@@ -9,8 +9,9 @@ import Game.Hint
 import Graphics.UI.Threepenny (MonadUI, UI)
 import Graphics.UI.Threepenny.Core (MonadUI (..))
 import qualified Network.Socket as N
-import Sound.Osc (Udp)
+import Sound.Osc
 import Sound.Tidal.Stream (Stream)
+import Sound.Osc.Transport.Fd.Udp (Udp)
 
 type RemoteAddress = N.SockAddr
 
