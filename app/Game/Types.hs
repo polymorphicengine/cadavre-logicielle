@@ -1,17 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Game.Types where
 
 import Control.Concurrent (MVar)
 import Control.Monad.State (StateT (..), lift)
-import Game.Hint
 import Graphics.UI.Threepenny (MonadUI, UI)
 import Graphics.UI.Threepenny.Core (MonadUI (..))
 import qualified Network.Socket as N
-import Sound.Osc
-import Sound.Tidal.Stream (Stream)
 import Sound.Osc.Transport.Fd.Udp (Udp)
+import Zwirn.Language.Compiler
 
 type RemoteAddress = N.SockAddr
 
@@ -30,7 +27,7 @@ instance Eq Player where
 instance Show Player where
   show = pName
 
--- a definition consists of a name, type, code and def
+-- a definition consists of a name, type and code
 data Definition
   = Definition
   { dName :: String,
@@ -51,9 +48,7 @@ data State
   { sLocal :: Udp,
     sPlayers :: Players,
     sDefinitions :: Definitions,
-    sHintMessage :: MVar InterpreterMessage,
-    sHintResponse :: MVar InterpreterResponse,
-    sStream :: Stream
+    sEnv :: MVar Environment
   }
 
 type Game = StateT State UI

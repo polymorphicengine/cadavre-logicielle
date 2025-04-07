@@ -1,17 +1,17 @@
 module Game.Actions where
 
-import Control.Concurrent.MVar (putMVar, takeMVar)
+import Control.Concurrent (putMVar, takeMVar)
 import Control.Monad (unless, void)
 import Control.Monad.State
 import Data.Maybe (fromMaybe)
 import Data.Text as T (pack, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Game.Hint
 import Game.Types
 import Game.UI
 import Graphics.UI.Threepenny as UI (Element, UI, askWindow, element, getElementById, liftUI, set, text, (#))
 import Sound.Osc.Fd as O
 import qualified Sound.Osc.Transport.Fd.Udp as O
+import Zwirn.Language.Compiler
 
 --------------------------------------------------------
 ------------------- player actions ---------------------
@@ -61,17 +61,21 @@ sharePlayers p = do
 ----------------- definition actions -------------------
 --------------------------------------------------------
 
-addDefinition :: String -> String -> RemoteAddress -> Game ()
-addDefinition name code remote = do
-  may <- interpretDefinition name code
+data DefinitionMode = Set | Define deriving (Eq)
+
+addDefinition :: DefinitionMode -> String -> String -> RemoteAddress -> Game ()
+addDefinition mode name code remote = do
+  first <- isFirstDefinition name
+  may <- (if mode == Set then setDefinition else defineDefinition) name code
 
   case may of
-    Right e -> replyError e remote
-    Left (first, typ) -> do
+    Left e -> replyError e remote
+    Right _ -> do
       replyOK remote
       pname <- getNameFromAddress remote
       if first
         then do
+          typ <- getType name
           let d = Definition name typ code
 
           -- add the element
@@ -91,75 +95,54 @@ addDefinition name code remote = do
           liftUI (addMessage (pname ++ " changed the definition of " ++ name))
           broadcast (O.p_message "/change" [utf8String pname, utf8String name])
 
-setStream :: String -> String -> Game (Either () String)
-setStream name code = do
-  response <- evaluateStatement (generateStreamCode name code)
-  case response of
-    Left _ -> return $ Left ()
-    Right e -> return $ Right e
+getType :: String -> Game String
+getType name = do
+  eith <- evaluateStatement (":t " ++ name)
+  case eith of
+    Right (Just x) -> return $ drop (length name + 4) x
+    _ -> error "Error in typecheck of definition name."
 
-getType :: String -> String -> Game (Either (Bool, String) String)
-getType name code = do
-  mayt <- Game.Actions.interpretType code
+isFirstDefinition :: String -> Game Bool
+isFirstDefinition name = do
   ds <- gets sDefinitions
   case lookup name (map (\x@(Definition n _ _) -> (n, x)) ds) of
-    Just d -> case mayt of
-      Left t -> if dType d == t then return $ Left (False, t) else return $ Right "Cannot change the type of definitions!"
-      Right e -> return $ Right e
-    Nothing -> case mayt of
-      Left x -> return $ Left (True, x)
-      Right y -> return $ Right y
+    Just _ -> return False
+    Nothing -> return True
 
-defineVariable :: String -> String -> Game (Either () String)
-defineVariable typ name = do
-  response <- evaluateStatement (generateDefCode typ name)
-  case response of
-    Left _ -> return $ Left ()
-    Right e -> return $ Right e
+setDefinition :: String -> String -> Game (Either String ())
+setDefinition name code = do
+  eith <- evaluateStatement (name ++ " <- " ++ code)
+  case eith of
+    Left err -> return $ Left err
+    Right _ -> return $ Right ()
 
--- returns error or true for the first time defining, false otherwise
-interpretDefinition :: String -> String -> Game (Either (Bool, String) String)
-interpretDefinition name code = do
-  mayt <- getType name code
-  case mayt of
-    Left (False, t) -> do
-      resp <- setStream name code
-      case resp of
-        Left _ -> return $ Left (False, t) -- successfully changed the definition
-        Right e -> return $ Right e
-    Left (True, t) -> do
-      resp <- setStream name code
-      case resp of
-        Left _ -> do
-          resp2 <- defineVariable t name
-          case resp2 of
-            Left _ -> return $ Left (True, t) -- first definition
-            Right e -> return $ Right e
-        Right e -> return $ Right e
-    Right e -> return $ Right e
-
-generateStreamCode :: String -> String -> String
-generateStreamCode name code = "streamSet tidal " ++ show name ++ " $ " ++ code
-
-generateDefCode :: String -> String -> String
-generateDefCode typ name = "let " ++ name ++ " = _define " ++ show name ++ " :: " ++ typ
+defineDefinition :: String -> String -> Game (Either String ())
+defineDefinition name code = do
+  eith <- evaluateStatement (name ++ " = " ++ code)
+  case eith of
+    Left err -> return $ Left err
+    Right _ -> return $ Right ()
 
 --------------------------------------------------------
 -------------------- code actions ----------------------
 --------------------------------------------------------
 
 -- returns left on success
-evaluateStatement :: String -> Game (Either (Maybe String) String)
+evaluateStatement :: String -> Game (Either String (Maybe String))
 evaluateStatement stat = do
-  hM <- gets sHintMessage
-  hR <- gets sHintResponse
-  liftIO $ putMVar hM (MStat stat)
-  response <- liftIO $ takeMVar hR
-  case response of
-    RStat Nothing -> return (Left Nothing)
-    RStat (Just v) -> return (Left $ Just v)
-    RError e -> return (Right e)
-    _ -> return $ Right "unkown hint error"
+  envMV <- gets sEnv
+  env <- liftIO $ takeMVar envMV
+  resp <- liftIO $ runCI env (compilerInterpreterBasic (pack stat) >>= (\r -> get >>= \e -> return (r, e)))
+  case resp of
+    Left (CIError err newEnv) -> do
+      liftIO (putMVar envMV newEnv)
+      return $ Left err
+    Right ("", newEnv) -> do
+      liftIO (putMVar envMV newEnv)
+      return $ Right Nothing
+    Right (x, newEnv) -> do
+      liftIO (putMVar envMV newEnv)
+      return $ Right (Just x)
 
 updateCode :: String -> RemoteAddress -> Game ()
 updateCode code add = do
@@ -169,17 +152,6 @@ updateCode code add = do
     Just p -> do
       el <- liftUI $ getCodeElement p
       void $ liftUI $ element el # set text code
-
-interpretType :: String -> Game (Either String String)
-interpretType typ = do
-  hM <- gets sHintMessage
-  hR <- gets sHintResponse
-  liftIO $ putMVar hM (MType typ)
-  response <- liftIO $ takeMVar hR
-  case response of
-    RType t -> return (Left t)
-    RError e -> return (Right e)
-    _ -> return (Right "unkown hint error")
 
 --------------------------------------------------------
 ------------------ helper functions --------------------

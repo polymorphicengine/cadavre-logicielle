@@ -18,7 +18,6 @@ module Game.Backend where
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-import Control.Monad (void)
 import Control.Monad.State (gets)
 import Data.Bifunctor
 import Game.Actions
@@ -39,8 +38,8 @@ act (Just (Message "/ping" []), remote) = pingAction remote
 act (Just (Message "/say" [AsciiString x]), remote) = sayAction (toUTF8 x) remote
 act (Just (Message "/sit" [AsciiString x, Int32 orb]), remote) = sitAction (toUTF8 x) (fromIntegral orb) remote
 act (Just (Message "/define" [AsciiString name, AsciiString code]), remote) = defineAction (toUTF8 name) (toUTF8 code) remote
+act (Just (Message "/set" [AsciiString name, AsciiString code]), remote) = setAction (toUTF8 name) (toUTF8 code) remote
 act (Just (Message "/eval" [AsciiString stat]), remote) = evalAction (toUTF8 stat) remote
-act (Just (Message "/type" [AsciiString typ]), remote) = typeAction (toUTF8 typ) remote
 act (Just _, remote) = unhandledAction remote
 act _ = return ()
 
@@ -63,22 +62,18 @@ sitAction name orb remote = do
   replyOK remote
 
 defineAction :: String -> String -> RemoteAddress -> Game ()
-defineAction = addDefinition
+defineAction = addDefinition Define
 
-typeAction :: String -> RemoteAddress -> Game ()
-typeAction typ remote = do
-  mayt <- interpretType typ
-  case mayt of
-    Left t -> replyOKVal t remote
-    Right e -> replyError e remote
+setAction :: String -> String -> RemoteAddress -> Game ()
+setAction = addDefinition Set
 
 evalAction :: String -> RemoteAddress -> Game ()
 evalAction stat remote = do
   mayv <- evaluateStatement stat
   case mayv of
-    Left (Just v) -> updateCode stat remote >> replyOKVal v remote
-    Left Nothing -> updateCode stat remote >> replyOK remote
-    Right e -> replyError e remote
+    Right (Just v) -> updateCode stat remote >> replyOKVal v remote
+    Right Nothing -> updateCode stat remote >> replyOK remote
+    Left e -> replyError e remote
 
 unhandledAction :: RemoteAddress -> Game ()
 unhandledAction remote = do

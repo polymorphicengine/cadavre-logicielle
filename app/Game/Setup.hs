@@ -21,40 +21,39 @@ module Game.Setup (setup) where
 -}
 
 import Control.Concurrent (forkIO)
-import Control.Concurrent.MVar (MVar, newEmptyMVar)
+import Control.Concurrent.MVar (newMVar)
 import Control.Monad (void)
+import qualified Data.Map as Map
 import Game.Backend
-import Game.Config
 import Game.Frontend
-import Game.Hint
 import Game.Types
 import Game.UI
 import Graphics.UI.Threepenny.Core as C hiding (defaultConfig, text)
 import qualified Sound.Osc.Transport.Fd.Udp as O
-import Sound.Tidal.Stream
+import qualified Sound.Tidal.Clock as Clock (defaultConfig)
+import Zwirn.Language.Builtin.Prelude
+import Zwirn.Language.Compiler
+import Zwirn.Stream.Types (Stream (..), StreamConfig (..))
+import Zwirn.Stream.UI
 
 setup :: Window -> UI ()
 setup win = void $ do
   frontend win
   str <- setupStream
-  (mMV, rMV) <- setupHint str
-
   -- listening address
   udp <- liftIO $ O.udp_server 2323
 
-  let state = State udp [] [] mMV rMV str
+  let env = Environment str builtinEnvironment builtinEnvironment Nothing Nothing (CiConfig False False) Nothing
+
+  envMV <- liftIO $ newMVar env
+
+  let state = State udp [] [] envMV
+
   _ <- liftIO $ forkIO $ runUI win $ void $ runGame state playingTable
   addMessage "Succesfully prepared the table. Ready to host the game."
 
 setupStream :: UI Stream
 setupStream = do
-  target <- configureTarget
-  conf <- configureStream
-  liftIO $ startTidal target conf
-
-setupHint :: Stream -> UI (MVar InterpreterMessage, MVar InterpreterResponse)
-setupHint stream = do
-  mMV <- liftIO newEmptyMVar
-  rMV <- liftIO newEmptyMVar
-  void $ liftIO $ forkIO $ hintJob stream mMV rMV
-  return (mMV, rMV)
+  mv <- liftIO $ newMVar Map.empty
+  m <- liftIO $ newMVar Map.empty
+  liftIO $ startStream (StreamConfig 57120 57110 "127.0.0.1" Clock.defaultConfig) mv m
